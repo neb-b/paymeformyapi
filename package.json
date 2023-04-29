@@ -3,6 +3,7 @@
   "version": "0.0.2",
   "description": "API Paywall",
   "main": "./lib/index.js",
+  "url": "https://github.com/neb-b/paymeformyapi",
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w"
