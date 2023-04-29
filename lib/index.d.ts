@@ -6,13 +6,15 @@ interface Config {
     refillAmount: number;
     requestCost: number;
 }
-interface CreateAccountResponse {
-    api_token: string;
+interface DeductBalanceResponse {
+    success: boolean;
+    updated_api_token?: string;
+    invoice?: string;
 }
 declare class PayMeForMyAPI {
     private config;
     constructor(config: Config);
-    createAccount(): Promise<CreateAccountResponse>;
-    deductBalance(api_token: string): Promise<any>;
+    generateApiToken(): Promise<any>;
+    deductBalance(api_token?: string): Promise<DeductBalanceResponse>;
 }
 export default PayMeForMyAPI;

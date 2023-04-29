@@ -1,6 +1,4 @@
-import axios from 'axios'
-
-import { v4 as uuidv4 } from 'uuid'
+import * as lnBits from './lnBits'
 
 interface Config {
   lnBitsAdminId: string
@@ -13,11 +11,8 @@ interface Config {
 
 interface DeductBalanceResponse {
   success: boolean
-  refillInvoice?: string
-}
-
-interface CreateAccountResponse {
-  api_token: string
+  updated_api_token?: string
+  invoice?: string
 }
 
 class PayMeForMyAPI {
@@ -27,115 +22,80 @@ class PayMeForMyAPI {
     this.config = config
   }
 
-  async createAccount(): Promise<CreateAccountResponse> {
-    const username = uuidv4()
+  async generateApiToken(): Promise<any> {
     try {
-      const { data } = await axios.post(
-        `${this.config.lnBitsURL}/usermanager/api/v1/users`,
-        {
-          admin_id: this.config.lnBitsAdminId,
-          user_name: username,
-          wallet_name: `${username}-wallet`,
-        },
-        {
-          headers: {
-            'X-Api-Key': this.config.lnBitsApiKey,
-            'Content-type': 'application/json',
-          },
-        }
-      )
+      // User has not paid yet
+      const account = await lnBits.createUserAndWallet({
+        url: this.config.lnBitsURL,
+        adminId: this.config.lnBitsAdminId,
+        apiKey: this.config.lnBitsApiKey,
+      })
 
-      const wallet = data.wallets[0]
+      const wallet = account.wallets[0]
 
-      return { api_token: data }
+      const invoice = await lnBits.createInvoice({
+        url: this.config.lnBitsURL,
+        amount: this.config.refillAmount,
+        invoiceKey: wallet.inkey,
+      })
+
+      const apiToken = `${wallet.adminkey}:${wallet.inkey}:${invoice.payment_hash}`
+
+      return { success: false, updated_api_token: apiToken, invoice: invoice.payment_request }
     } catch (e) {
-      console.error('An error occurred creating account:', e)
-      throw e
+      console.log('error generating api token', e)
     }
   }
 
-  async deductBalance(api_token: string): Promise<any> {
-    const [adminKey, invoiceKey] = api_token.split(':')
+  async deductBalance(api_token: string = ''): Promise<DeductBalanceResponse> {
+    const [userAdminKey, userInvoiceKey, paymentHash] = api_token.split(':')
+
+    try {
+      if (!userAdminKey || !userInvoiceKey || !paymentHash) {
+        throw new Error('Invalid api_token')
+      }
+
+      // Check if original payment for fill-up has been made
+      // LNBits displays a user's balance as 0 until they've manually requested the status of a payment_hash???
+      await lnBits.checkPaymentHash({ url: this.config.lnBitsURL, paymentHash, adminKey: userAdminKey })
+    } catch (e) {
+      console.log('error checking payment hash', e)
+      return this.generateApiToken()
+    }
 
     try {
       //
       // Create invoice from admin wallet
       // Pay invoice from user wallet
-      // If it fails, return refill invoice
+      // If it fails, return a refill invoice
       //
-      // replace this with balance check on user's wallet?
-      // const { data } = await axios.get(
-      //     `${this.config.lnBitsURL}/api/v1/wallets/${'498a7bb1582748deaa93abca1c466314'}`,
-      //     {
-      //     headers: {
-      //         'Content-Type': 'application/json',
-      //         'X-Api-Key': this.config.lnBitsApiKey,
-      //     },
-      //     }
-      // )
-      //
-      const {
-        data: { payment_request },
-      } = await axios.post(
-        `${this.config.lnBitsURL}/api/v1/payments`,
-        {
-          memo: 'api request',
-          out: false,
-          amount: this.config.requestCost,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Api-Key': this.config.lnBitsApiKey,
-          },
-        }
-      )
+      const invoice = await lnBits.createInvoice({
+        url: this.config.lnBitsURL,
+        amount: this.config.requestCost,
+        invoiceKey: this.config.lnBitsAdminInvoiceKey,
+      })
 
-      const { data } = await axios.post(
-        `${this.config.lnBitsURL}/api/v1/payments`,
-        {
-          out: true,
-          bolt11: payment_request,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Api-Key': adminKey,
-          },
-        }
-      )
+      await lnBits.payInvoice({
+        url: this.config.lnBitsURL,
+        bolt11: invoice.payment_request,
+        adminKey: userAdminKey,
+      })
 
-      // Return the payment response from the LNBits API
-      return data
+      return { success: true }
     } catch (e) {
-      console.log('e', e)
       const error = e as any
       const errorResponseDetail = error.response?.data?.detail || ''
       if (errorResponseDetail.includes('Insufficient balance')) {
         try {
-          const {
-            data: { payment_request: refillInvoice },
-          } = await axios.post(
-            `${this.config.lnBitsURL}/api/v1/payments`,
-            {
-              memo: 'refill',
-              out: false,
-              amount: this.config.refillAmount,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Api-Key': invoiceKey,
-              },
-            }
-          )
-
-          return { success: false, refillInvoice }
+          return { success: false }
         } catch (e) {
           console.log('error generating refill invoice', e)
         }
       }
     }
+
+    // Fallback
+    return { success: false }
   }
 }
 
