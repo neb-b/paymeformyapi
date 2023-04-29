@@ -1,6 +1,6 @@
 {
   "name": "paymeformyapi",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "API Paywall",
   "main": "./lib/index.js",
   "url": "https://github.com/neb-b/paymeformyapi",
