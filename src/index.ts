@@ -11,7 +11,7 @@ interface Config {
 
 interface DeductBalanceResponse {
   success: boolean
-  updated_api_token?: string
+  api_token?: string
   invoice?: string
 }
 
@@ -22,7 +22,7 @@ class PayMeForMyAPI {
     this.config = config
   }
 
-  async generateApiToken(): Promise<any> {
+  async generateApiToken(): Promise<DeductBalanceResponse> {
     try {
       // User has not paid yet
       const account = await lnBits.createUserAndWallet({
@@ -42,10 +42,12 @@ class PayMeForMyAPI {
 
       const apiToken = `${wallet.adminkey}:${wallet.inkey}:${invoice.payment_hash}`
 
-      return { success: false, updated_api_token: apiToken, invoice: invoice.payment_request }
+      return { success: false, api_token: apiToken, invoice: invoice.payment_request }
     } catch (e) {
       console.log('error generating api token', e)
     }
+
+    return { success: false }
   }
 
   async deductBalance(api_token: string = ''): Promise<DeductBalanceResponse> {
@@ -53,18 +55,22 @@ class PayMeForMyAPI {
 
     try {
       if (!userAdminKey || !userInvoiceKey || !paymentHash) {
-        throw new Error('Invalid api_token')
+        return this.generateApiToken()
       }
 
       // Check if original payment for fill-up has been made
       // LNBits displays a user's balance as 0 until they've manually requested the status of a payment_hash???
-      await lnBits.checkPaymentHash({ url: this.config.lnBitsURL, paymentHash, adminKey: userAdminKey })
-    } catch (e) {
-      console.log('error checking payment hash', e)
-      return this.generateApiToken()
-    }
+      const data = await lnBits.checkPaymentHash({
+        url: this.config.lnBitsURL,
+        paymentHash,
+        adminKey: userAdminKey,
+      })
 
-    try {
+      if (!data.paid) {
+        // User has not paid yet, return same response as original generateToken
+        return { success: false, api_token, invoice: data.details.bolt11 }
+      }
+
       //
       // Create invoice from admin wallet
       // Pay invoice from user wallet
@@ -88,11 +94,8 @@ class PayMeForMyAPI {
       const error = e as any
       const errorResponseDetail = error.response?.data?.detail || ''
       if (errorResponseDetail.includes('Insufficient balance')) {
-        try {
-          return { success: false }
-        } catch (e) {
-          console.log('error generating refill invoice', e)
-        }
+        console.log('error generating refill invoice', e)
+        return this.generateApiToken()
       }
     }
 
