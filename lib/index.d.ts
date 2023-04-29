@@ -1,18 +1,18 @@
 interface Config {
-    lnBitsAdminKey: string;
-    lnBitsKey: string;
+    lnBitsAdminId: string;
+    lnBitsApiKey: string;
     lnBitsURL: string;
+    lnBitsAdminInvoiceKey: string;
     refillAmount: number;
     requestCost: number;
 }
-interface DeductBalanceResponse {
-    success: boolean;
-    refillInvoice?: string;
+interface CreateAccountResponse {
+    api_token: string;
 }
 declare class PayMeForMyAPI {
     private config;
     constructor(config: Config);
-    createAccount(): Promise<void>;
-    deductBalance(): Promise<DeductBalanceResponse>;
+    createAccount(): Promise<CreateAccountResponse>;
+    deductBalance(api_token: string): Promise<any>;
 }
 export default PayMeForMyAPI;

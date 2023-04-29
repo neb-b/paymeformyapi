@@ -2,9 +2,10 @@
   "name": "paymeformyapi",
   "version": "0.0.0",
   "description": "API Paywall",
-  "main": "index.ts",
+  "main": "./lib/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "tsc -w"
   },
   "author": "",
   "license": "ISC",
@@ -14,6 +15,7 @@
   },
   "devDependencies": {
     "@types/uuid": "^9.0.1",
+    "nodemon": "^2.0.22",
     "typescript": "^5.0.4"
   }
 }
