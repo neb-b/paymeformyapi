@@ -35,15 +35,17 @@ export const createInvoice = async ({
   url,
   amount,
   invoiceKey,
+  memo,
 }: {
   amount: number
   url: string
   invoiceKey: string
+  memo: string
 }) => {
   const { data } = await axios.post(
     `${url}/api/v1/payments`,
     {
-      memo: 'api request',
+      memo,
       out: false,
       amount,
     },

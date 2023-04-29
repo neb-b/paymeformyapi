@@ -37,6 +37,7 @@ class PayMeForMyAPI {
         url: this.config.lnBitsURL,
         amount: this.config.refillAmount,
         invoiceKey: wallet.inkey,
+        memo: 'api refill',
       })
 
       const apiToken = `${wallet.adminkey}:${wallet.inkey}:${invoice.payment_hash}`
@@ -73,6 +74,7 @@ class PayMeForMyAPI {
         url: this.config.lnBitsURL,
         amount: this.config.requestCost,
         invoiceKey: this.config.lnBitsAdminInvoiceKey,
+        memo: 'api request',
       })
 
       await lnBits.payInvoice({
