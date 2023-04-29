@@ -4,6 +4,8 @@ Add lightning paywalls to your api
 
 ## How to use
 
+[You can view this commit to see paymeformyapi being added to a next.js project](https://github.com/neb-b/usdebt.wtf/commit/9e09741a11b9d9e9e2bbc059d6527cfb46a6479d)
+
 ```
 npm i --save paymeformyapi
 ```
