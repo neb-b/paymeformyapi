@@ -2,6 +2,8 @@
 
 Add lightning paywalls to your api
 
+[See a demo here](https://www.usdebt.wtf/api/data)
+
 ## How to use
 
 [You can view this commit to see paymeformyapi being added to a next.js project](https://github.com/neb-b/usdebt.wtf/commit/d8856abf3a97eaa4b03adba7b0a5b3aa1a610cff)
@@ -14,9 +16,9 @@ npm i --save paymeformyapi
 - Create a new user & wallet, this will be the user that receives payments for every api request
 - Save the `inkey` from this user's wallet
 
-```
-// Initialize the package
+#### Initialize the package
 
+```
 import PayMeForMyAPI from 'paymeformyapi'
 
 const paywall = new PayMeForMyAPI({
@@ -29,9 +31,9 @@ const paywall = new PayMeForMyAPI({
 })
 ```
 
-```
-// Add a paywall to an API route
+#### Add a paywall to an API route
 
+```
 const { api_token } = req.query // Get the api_token from the request somehow
 
 const {
