@@ -59,7 +59,7 @@ class PayMeForMyAPI {
       }
 
       // Check if original payment for fill-up has been made
-      // LNBits displays a user's balance as 0 until they've manually requested the status of a payment_hash???
+      // LNbits displays a user's balance as 0 until they've manually requested the status of a payment_hash???
       const data = await lnBits.checkPaymentHash({
         url: this.config.lnBitsURL,
         paymentHash,

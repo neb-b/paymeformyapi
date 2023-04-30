@@ -10,7 +10,7 @@ Add lightning paywalls to your api
 npm i --save paymeformyapi
 ```
 
-- Generate an LNBits instance and install the User Manager extension
+- Generate an LNbits instance and install the User Manager extension
 - Create a new user & wallet, this will be the user that receives payments for every api request
 - Save the `inkey` from this user's wallet
 
